@@ -1,2 +1,3 @@
-# Data_Visualization
-Explore the world of graphical data visualization, from common forms to interactive graphics, using ggplot2 and R, with a focus on understanding statistical perspectives and practical applications.
+# Data Visualization
+
+This repository houses resources for a comprehensive course covering graphical displays of quantitative information. We explore various display types, master ggplot2 for visualization, understand statistical perspectives, tackle complex data structures, delve into interactive graphics, and provide hands-on experience in R for real dataset visualization.
