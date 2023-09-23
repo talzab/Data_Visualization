@@ -1,0 +1,198 @@
+---
+title: "Grammar of Graphics"
+author:
+- "Tilina Alzaben"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Resisting the First Order for Categories
+
+For this problem, we'll work with the `starwars` dataset that is included in the [`dplyr` package](https://dplyr.tidyverse.org/reference/starwars.html).
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+data("starwars")
+starwars_character_films <- starwars %>%
+  dplyr::select(name, films) %>%
+  unnest(films)
+```
+
+We will focus on the `films` variable, which indicates the film a particular character appeared in. Specifically, we will demonstrate how to reorder categories on graphs in `R` which particularly useful when visualizing categorical variables. First, make a bar plot of the `films` variable. 
+
+```{r}
+starwars_character_films %>%
+  ggplot(aes(x = fct_rev(fct_infreq(films)))) +
+  geom_bar(fill = "lightblue") +
+  labs(
+    title = "Distribution of Characters in Star Wars",
+    subtitle = "(ordered most to least frequent)",
+    y = "Count", x = "Film"
+  ) +
+  coord_flip()
+```
+
+Recreate the plot, but this time, order the categories in a logical order (such as episode order: The Phantom Menace, Attack of the Clones, ..., The Force Awakens; or release date order: A New Hope, The Empire Strikes Back, ..., The Force Awakens).
+
+```{r}
+starwars_character_films %>%
+  ggplot(aes(x = fct_rev(fct_relevel(
+    films,
+    "The Phantom Menace",
+    "Attack of the Clones",
+    "Revenge of the Sith",
+    "A New Hope",
+    "The Empire Strikes Back",
+    "Return of the Jedi",
+    "The Force Awakens"
+  )))) +
+  geom_bar(fill = "lightblue") +
+  labs(
+    title = "Distribution of Characters in Star Wars",
+    subtitle = "(in chronological order)",
+    y = "Count", x = "Film"
+  ) +
+  coord_flip()
+```
+
+Recreate the plot from the previous part, but this time, rename the categories so that they use the following film abbreviations:  I, II, III, IV, V, VI, VII.
+
+```{r}
+starwars_character_films <- starwars_character_films %>%
+  mutate(films = fct_relevel(
+    films,
+    "The Phantom Menace",
+    "Attack of the Clones",
+    "Revenge of the Sith",
+    "A New Hope",
+    "The Empire Strikes Back",
+    "Return of the Jedi",
+    "The Force Awakens"
+  ))
+
+
+starwars_character_films %>%
+  ggplot(aes(x = fct_rev(fct_recode(films,
+    "I" = "The Phantom Menace",
+    "II" = "Attack of the Clones",
+    "III" = "Revenge of the Sith",
+    "IV" = "A New Hope",
+    "V" = "The Empire Strikes Back",
+    "VI" = "Return of the Jedi",
+    "VII" = "The Force Awakens"
+  )))) +
+  geom_bar(fill = "lightblue") +
+  labs(
+    title = "Distribution of Characters in Star Wars",
+    subtitle = "(in chronological order)",
+    y = "Count", x = "Film"
+  ) +
+  coord_flip()
+```
+
+
+# UFO Sightings in Pittsburgh
+
+For this problem with a dataset via the #TidyTuesday project containing [information about UFO sightings](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-06-25). 
+
+```{r}
+library(tidyverse)
+ufo_sightings <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-25/ufo_sightings.csv")
+```
+
+
+Create a __single graph__ that displays the __marginal distribution__ of `country`.
+
+```{r, message = FALSE, warning = FALSE}
+ufo_sightings %>%
+  ggplot(aes(x = fct_infreq(country))) +
+  geom_bar(fill = "lightgreen") +
+  labs(
+    title = "Distribution of UFO Sighting Countires",
+    x = "Country", y = "UFO Sightings"
+  )
+```
+
+
+Create a summarized dataset that contains the following information about `ufo_shape` for UFO sightings in Pittsburgh (note: use lower-case `pittsburgh`):
+
+- `ufo_shape`: the UFO shape (this dataset should have one row for each shape)
+- `prop`: proportion of Pittsburgh UFO sightings with the particular UFO shape
+- `se`: standard error for UFO shape proportion estimate
+- `lower`: lower bound for 95% CI
+- `upper`: upper bound for 95% CI
+
+Make sure to only look at UFO sightings in Pittsburgh and remove any sightings where the `ufo_shape` is missing.
+
+```{r}
+ufo_sightings_summary <- ufo_sightings %>%
+  filter(str_to_lower(city_area) == "pittsburgh" & !is.na(ufo_shape)) %>%
+  group_by(ufo_shape) %>%
+  summarize(
+    count = n(),
+    .group = "drop"
+  ) %>%
+  mutate(
+    total = sum(count),
+    prop = count / total,
+    se = sqrt(prop * (1 - prop) / total),
+    lower = prop - 2 * se,
+    upper = prop + 2 * se
+  ) %>%
+  select(ufo_shape, prop, se, lower, upper)
+
+ufo_sightings_summary
+```
+
+Create a __single graph__ that displays the __marginal distribution__ of `ufo_shape` for UFO sightings in Pittsburgh, using the dataset you constructed above. Additionally, make sure your graph has the following:
+
+- add 95% CI to your display,
+- order the `ufo_shape` category levels by frequency in your display,
+- make sure the `ufo_shape` labels are easy to read and that your graph is labeled appropriately.
+
+```{r}
+ufo_sightings_summary %>%
+  ggplot(aes(x = fct_reorder(ufo_shape, prop))) +
+  geom_bar(aes(y = prop), stat = "identity", fill = "lightgreen") +
+  coord_flip() +
+  geom_errorbar(
+    aes(
+      ymin = lower,
+      ymax = upper
+    ),
+    color = "darkgreen"
+  ) +
+  labs(
+    title = "Frequency of Different UFO Shapes Seen in Pittsburgh",
+    subtitle = "(ordered by most to least frequent)",
+    x = "UFO Shape", y = "Sightings"
+  )
+```
+
+In the previous part, we ignored the issue of multiple testing. You can find that there are 120 different pairwise comparisons ($120 = \binom{16}{2} =$ `ncol(combn(16,2))`) you could make from the graph above. As a result, if we attempt to make multiple pairwise comparisons from a single graph with 95% CIs, our chance of making a Type 1 error is greater than 5%. 
+
+In general, $\alpha$-level CIs are constructed using the Normal quantile $z_{1 - \alpha / 2}$. When we construct 95% CIs, $\alpha = 0.05$, and thus we use $z_{1 - \alpha / 2} = z_{0.975}$ (computed with `qnorm(0.975)`).
+
+Recreate the figure but update your CIs with new CIs following the [Bonferroni correction](https://en.wikipedia.org/wiki/Bonferroni_correction).
+
+```{r}
+ufo_sightings_summary %>%
+  mutate(lower = pmax(0, prop - qnorm(1 - (0.05 / 120) / 2) * se), 
+         upper = pmin(1, prop + qnorm(1 - (0.05 / 120) / 2) * se)) %>%
+  ggplot(aes(x = fct_reorder(ufo_shape, prop))) +
+  geom_bar(aes(y = prop), stat = "identity", fill = "lightgreen") +
+  coord_flip() +
+  geom_errorbar(
+    aes(
+      ymin = lower,
+      ymax = upper
+    ),
+    color = "darkgreen"
+  ) +
+  labs(
+    title = "Frequency of Different UFO Shapes Seen in Pittsburgh",
+    subtitle = "(ordered by most to least frequent)",
+    x = "UFO Shape", y = "Sightings"
+  )
+```
