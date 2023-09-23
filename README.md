@@ -1,3 +1,3 @@
 # Data Visualization
 
-This repository houses resources for a comprehensive course covering graphical displays of quantitative information. We explore various display types, master ggplot2 for visualization, understand statistical perspectives, tackle complex data structures, delve into interactive graphics, and provide hands-on experience in R for real dataset visualization.
+This repository contains materials for a comprehensive course in graphical data visualization, including exploration of display types, proficiency in ggplot2, statistical comprehension, handling complex data structures, interactive graphics, and practical R-based dataset visualization experience.
